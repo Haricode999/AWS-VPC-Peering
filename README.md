@@ -3,7 +3,7 @@ Desingned and implemented a Secure AWS VPC Peering architecture connecting two i
 
 ## Architecture Diagram
 
-![AWS VPC Peering Architecture](images/6258079100933182548.png)
+![AWS VPC Peering Architecture](6260330900746867079.jpg)
 
 ## Project Overview
 
