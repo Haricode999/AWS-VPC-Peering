@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AWS VPC peering architecture</title>
+<style>
+:root{--bg:#f4f6fb;--panel:#fff;--line:#d5dbe8;--text:#0f1b33;--mut:#5b6784;--a:#1f6fd1;--b:#0f9d6b;--amb:#c77700;--cy:#0a8fa8;--red:#c93a3a;--chip:#eef2fa;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#050d1f;--panel:#0b1a36;--line:#1f3a66;--text:#e7efff;--mut:#8fa3c7;--a:#4da3ff;--b:#34e0a1;--amb:#ffb74d;--cy:#3ad6ee;--red:#ff6b6b;--chip:#10244a}}
+:root[data-theme="dark"]{--bg:#050d1f;--panel:#0b1a36;--line:#1f3a66;--text:#e7efff;--mut:#8fa3c7;--a:#4da3ff;--b:#34e0a1;--amb:#ffb74d;--cy:#3ad6ee;--red:#ff6b6b;--chip:#10244a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:18px 14px 28px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+h1{font-size:20px;margin:0 0 4px;font-weight:600}
+.sub{color:var(--mut);margin:0 0 16px}
+.region{border:1px solid var(--line);border-radius:18px;padding:14px;background:var(--panel)}
+.rl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);font-weight:600;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:860px){.grid{grid-template-columns:1fr 150px 1fr}}
+.vpc{border:1.5px solid var(--c);border-radius:14px;padding:14px;background:var(--bg)}
+.vpc.a{--c:var(--a)}.vpc.b{--c:var(--b)}
+.vh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}
+.vt{font-weight:600;font-size:16px;color:var(--c)}
+.vm{color:var(--mut);margin:2px 0 12px}
+.pill{border:1px solid;border-radius:99px;padding:2px 10px;font-size:11px;font-weight:600;white-space:nowrap}
+.pill.red{color:var(--red);border-color:var(--red)}
+.pill.ok{color:var(--b);border-color:var(--b)}
+.row{display:flex;align-items:center;gap:0}
+.chip{flex:1;border:1px solid var(--line);background:var(--chip);border-radius:10px;padding:8px 10px;min-width:0}
+.chip b{display:block;font-weight:600}
+.chip span{color:var(--mut);font-size:12px;overflow-wrap:anywhere}
+.hl{width:18px;border-top:2px dashed var(--cy);flex:none}
+.vl{height:22px;margin-left:30px;border-left:2px dashed var(--cy);position:relative}
+.vl i{position:absolute;left:10px;top:2px;font-style:normal;font-size:11px;color:var(--cy)}
+.subnet{border:1px dashed var(--line);border-radius:12px;padding:10px;margin-top:2px}
+.sl{font-weight:600;margin-bottom:8px;font-size:13px}
+.sl small{color:var(--mut);font-weight:400}
+.node{border:1.5px solid var(--c);border-radius:10px;padding:10px;background:var(--panel)}
+.nn{font-weight:600}
+.kv{color:var(--mut);margin-top:4px;overflow-wrap:anywhere}
+.kv em{font-style:normal;color:var(--text)}
+.sg{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:var(--mut)}
+.sg div{overflow-wrap:anywhere}
+.sg div:before{content:"› ";color:var(--c)}
+.peer{position:relative;display:flex;align-items:center;justify-content:center;min-height:170px;padding:6px 0}
+.peer:before,.peer:after{content:"";position:absolute;left:calc(50% - 8px);top:0;bottom:0;border-left:2px dashed var(--amb)}
+.peer:after{left:calc(50% + 6px);border-color:var(--cy)}
+@media(min-width:860px){.peer:before,.peer:after{left:0;right:0;top:calc(50% - 8px);bottom:auto;border-left:0;border-top:2px dashed var(--amb)}.peer:after{top:calc(50% + 6px);border-color:var(--cy)}}
+.pc{position:relative;z-index:1;background:var(--panel);border:1.5px solid var(--amb);border-radius:12px;padding:10px;text-align:center;width:150px}
+.pc b{display:block;font-size:11px;letter-spacing:.08em}
+.pc .mono{font-size:10px;color:var(--mut);overflow-wrap:anywhere;display:block;margin:4px 0}
+.pc small{display:block;color:var(--mut);margin-top:6px;font-size:11px}
+.leg{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;color:var(--mut);font-size:12px}
+.leg span:before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--k);margin-right:6px}
+@media(prefers-reduced-motion:no-preference){.hl,.vl,.peer:before,.peer:after{animation:d 1.2s linear infinite}@keyframes d{to{border-color:transparent}}}
+</style></head>
+<body>
+<h1>AWS VPC peering: bastion to private workloads</h1>
+<p class="sub">Two private VPCs joined by a direct peering link. One internet entry point.</p>
+<div class="region">
+<div class="rl">AWS region: ap-south-1 (Mumbai)</div>
+<div class="grid">
+
+<div class="vpc a">
+<div class="vh"><div class="vt">VPC A: ewb-vpc-a (requester)</div></div>
+<div class="vm mono">vpc-0a45e933c94dbbf36 | 10.10.0.0/16</div>
+<div class="row">
+<div class="chip"><b>ewb-igw-a</b><span class="mono">Target: 0.0.0.0/0</span></div>
+<div class="hl"></div>
+<div class="chip"><b>Local admin laptop</b><span class="mono">ProxyJump ewb-bastion</span></div>
+</div>
+<div class="vl"><i>SSH / 22</i></div>
+<div class="subnet">
+<div class="sl">Subnet: ewb-a-public <small class="mono">10.10.1.0/24</small></div>
+<div class="node">
+<div class="nn">ewb-bastion</div>
+<div class="kv mono">i-00c1142d3444dc204</div>
+<div class="kv mono">Private <em>10.10.1.10</em> | Public <em>13.235.114.229</em></div>
+<div class="sg"><div>SG ewb-sg-bastion: SSH TCP 22 from student IP /32</div></div>
+</div></div>
+<div class="vl"><i>ProxyJump</i></div>
+<div class="subnet">
+<div class="sl">Subnet: ewb-a-private <small class="mono">10.10.2.0/24</small></div>
+<div class="node">
+<div class="nn">ewb-app-a</div>
+<div class="kv mono">i-01b87853625974f02</div>
+<div class="kv mono">Private <em>10.10.2.10</em> | Public IP: none</div>
+<div class="sg"><div>SSH from 10.10.1.10/32</div><div>ICMP from 10.20.1.10/32</div></div>
+</div></div>
+</div>
+
+<div class="peer"><div class="pc">
+<b>VPC PEERING</b><span class="mono">pcx-0b613354c332e40d5</span>
+<span class="pill ok">ACTIVE</span>
+<small>No transitive routing</small>
+</div></div>
+
+<div class="vpc b">
+<div class="vh"><div class="vt">VPC B: ewb-vpc-b (accepter)</div><span class="pill red">Zero IGW / air-gapped</span></div>
+<div class="vm mono">vpc-0bc1f49b0c3499717 | 10.20.0.0/16</div>
+<div class="subnet">
+<div class="sl">Subnet: ewb-b-private <small class="mono">10.20.1.0/24</small></div>
+<div class="kv mono" style="margin:0 0 8px">Route table: rtb-0a5b202e2cb2445ad</div>
+<div class="node">
+<div class="nn">ewb-app-b</div>
+<div class="kv mono">i-030abb340260099c4</div>
+<div class="kv mono">Private <em>10.20.1.10</em> | Public IP: none</div>
+<div class="sg"><div>SG ewb-sg-app-b (sg-0c53acb5ccaada0e7)</div><div>TCP 22 inbound from bastion 10.10.1.10/32</div><div>ICMP echo request inbound from App-A 10.10.2.10/32</div><div>Stateful return: echo reply automatically allowed</div></div>
+</div></div>
+</div>
+
+</div>
+<div class="leg">
+<span style="--k:var(--a)">VPC A 10.10.0.0/16</span>
+<span style="--k:var(--b)">VPC B 10.20.0.0/16</span>
+<span style="--k:var(--amb)">ICMP cross-VPC echo path</span>
+<span style="--k:var(--cy)">OpenSSH ProxyJump control path</span>
+<span style="--k:var(--red)">Zero internet access to VPC B</span>
+</div>
+</div>
+</body></html>
