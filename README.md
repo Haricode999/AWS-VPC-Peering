@@ -3,12 +3,12 @@ Desingned and implemented a Secure AWS VPC Peering architecture connecting two i
 
 ## Architecture Diagram
 
-![AWS VPC Peering Architecture](images/aws-vpc-peering-architecture.png)
+![AWS VPC Peering Architecture](images/6258079100933182548.png)
 
 ## Project Overview
 
 This lab uses two VPCs in the **same AWS account and AWS Region
-(`ap-south-1`, Mumbai)**.
+(`ap-south-1`)**.
 
 -   **VPC A** contains a public subnet with a bastion host and a private
     subnet with App-A.
