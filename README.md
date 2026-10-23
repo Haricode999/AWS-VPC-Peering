@@ -22,7 +22,7 @@ This lab uses two VPCs in the **same AWS account and AWS Region
 -   VPC peering provides private connectivity only; it does **not**
     automatically give VPC B internet access through VPC A.
 
-## Network Address Plan
+## 🛜Network Address Plan
 
   -----------------------------------------------------------------------
   Resource                CIDR / Private IP       Purpose
@@ -85,7 +85,7 @@ Gateway if internet access is required for the bastion.
 > traffic. Do not add a default route to an Internet Gateway in VPC B
 > for this lab.
 
-## Security Design
+## 🛡️Security Design🔐
 
 -   Allow SSH (`TCP/22`) to the bastion only from the administrator's
     current public IPv4 address using a `/32` source.
@@ -100,7 +100,7 @@ Gateway if internet access is required for the bastion.
 Security group rules should match the exact addresses and access paths
 configured in the deployed lab.
 
-## Validation Checklist
+## ✅Validation Checklist!
 
 -   [ ] Both VPCs and all subnets use the planned, non-overlapping CIDR
     ranges.
@@ -117,7 +117,7 @@ configured in the deployed lab.
 -   [ ] VPC B does not gain internet access merely because VPC peering
     is configured.
 
-## What This Project Demonstrates
+## 📑What This Project Demonstrates
 
 -   AWS VPC and subnet design
 -   Public vs. private subnet routing
